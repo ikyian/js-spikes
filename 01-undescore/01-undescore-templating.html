@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title> 01-undescore-templating-test</title>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script>
+            $(function(){
+                $("#content").append("ready");
+
+                var _get_content = function(nid){
+                    return $(nid).html();
+                }
+                /**
+                 * generates content from inline script-template
+                 */
+                var from_script_template = function(script_id, args){
+                    return _.template(_get_content(script_id))(args);
+                }
+                /**
+                 * generates content from inline dom-node-template
+                 */
+                var from_node_template = function(node_id, args){
+                    var src = _.unescape(_get_content(node_id));
+                    return _.template(src)(args);
+                }
+                $("#content").append(from_script_template("#user_tmpl", {
+                    content : "test content"
+                }));
+                $("#content").append(from_node_template("#simple", {
+                    content : "test content"
+                }));
+            });
+        </script>
+        <script type="text/html" id="user_tmpl">
+            <div class="block">
+                from script template : <%= content %>
+            </div>
+        </script>
+        <style>
+            .templates {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content"></div>
+        <!-- templates begin -->
+        <div class="templates">
+            <div id="simple">
+                <div class="block">
+                    from node template :
+                    <%= 234 %>
+                    <%= content %>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

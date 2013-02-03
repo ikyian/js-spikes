@@ -1,0 +1,70 @@
+<? DOCTYPE html ?>
+<html>
+    <head>
+        <title>01 simple backbone test</title>
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/backbone-0-9-10.js"></script>
+        <script>
+            $(function(){
+                var Note = Backbone.Model.extend({});
+                
+                var NoteView = Backbone.View.extend({
+                    className : "note-view",
+                    tagName : "div",
+                    events : {
+                        "click .text .edit" : "onTextEdit",
+                        "click .tags .edit" : "onTagsEdit",
+                    },
+                    onTextEdit : function(){
+                        alert('onTextEdit');
+                    },
+                    onTagsEdit : function(){
+                        alert('onTagsEdit');
+                    },
+                    render : function(){
+                        var tmpl = _.unescape($('#templates .noteView').html());
+                        var res = _.template(tmpl)({
+                            text : this.model.get("text"), 
+                            tags : this.model.get("tags")
+                        });
+                        this.$el.html(res);
+                        return this;
+                    }
+                });
+                var n = new Note({
+                    text : 'test text',
+                    tags : 'a b c'
+                })
+                var v = new NoteView({
+                    model : n
+                });
+                $('#content').append(v.render().el)
+            });
+        </script>
+        <style>
+            #templates {
+                display : none;
+            }
+            .note-view .edit {
+                margin-left: 10px;
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content">
+        </div>
+        <!-- templates -->
+        <div id="templates">
+            <div class="noteView template">
+                <div class="label">Text:</div>
+                <div class="text"><%= text %><span class="edit">edit...</span></div>
+                <div class="label">Tags:</div>
+                <div class="tags"><%= tags %><span class="edit">edit...</span></div>
+            </div>
+        </div>
+    </body>
+</html>
