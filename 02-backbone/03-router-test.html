@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>03-router-test</title>
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width initial-scale=1.0" />
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/backbone-0-9-10.js"></script>
+        <script src="lib/backbone-mediator.js"></script>
+        <script>
+            $(function(){
+            	var _l = function(msg){
+            		console.log(msg);
+            	}
+            	var Router = Backbone.Router.extend({
+            		routes : {
+            			"view1" : "showView1",
+            			"view2" : "showView2"
+            		},
+            		showView1 : function(){
+        				_l("router:show:view1");
+        				Backbone.Mediator.publish("show:view1");
+        			},
+        			showView2 : function(){
+        				_l("router:show:view2");
+        				Backbone.Mediator.publish("show:view2");
+        			}
+            	});
+
+       	       	var router = new Router();
+
+            	var View1 = Backbone.View.extend({
+            		className : "view1",
+            		template : _.template(_.unescape($('#view1').html())),
+            		render : function(){
+            			var content = this.template({});
+            			this.$el.html(content);
+            			this.$(".commands .view2").on("click", function(){
+            				_l("show view 2");
+            				router.navigate("view2", {trigger : true});
+            			});
+            			return this;
+            		}
+            	});
+            	
+            	var View2 = Backbone.View.extend({
+            		className : "view2",
+            		template : _.template(_.unescape($('#view2').html())),
+            		render : function(){
+            			var content = this.template({});
+            			this.$el.html(content);
+            			this.$(".commands .view1").on("click", function(){
+            				_l("show view 1");
+            				router.navigate("view1", {trigger : true});
+            			});
+            			return this;
+            		}
+            	});
+            	
+
+				var showView1 = function(){
+					_l("showView1()");
+	            	var view = new View1({});
+	            	$("#content").empty().append(view.render().el);
+				};
+				
+				var showView2 = function(){
+					_l("showView2()");
+	            	var view = new View2({});
+	            	$("#content").empty().append(view.render().el);
+				};
+				
+            	Backbone.Mediator.subscribe("show:view1", function(){
+            		_l("mediator:show:view1");
+            		showView1();
+            	});
+            	Backbone.Mediator.subscribe("show:view2", function(){
+            		_l("mediator:show:view2");
+            		showView2();
+            	});
+            	
+            	Backbone.history.start();
+            	router.navigate("view1");
+            });
+        </script>
+        <style>
+            #templates {
+                display : none;
+            }
+            .btn {
+                margin-left: 10px;
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+            .right {
+            	float : right;
+            }
+        </style>
+	</head>
+
+	<body>
+		<div id="content">
+		</div>
+        <!-- templates -->
+        <div id="templates">
+        	<div id="view1">
+        		view 1
+        		<div class="commands">
+        			<span class="btn view2">view2</span>
+        		</div>
+        	</div>
+        	<div id="view2">
+        		view 2
+        		<div class="commands">
+        			<span class="btn view1">view1</span>
+        		</div>
+        	</div>
+        </div>
+	</body>
+</html>
