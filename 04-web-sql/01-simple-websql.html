@@ -1,0 +1,59 @@
+<html>
+	<head>
+		<title></title>
+		<script src="lib/zepto-1-0rc1.js"></script>
+		<script>
+			$(function(){
+				var db = openDatabase("my-websql", "1.0", "test database for spikes", 2 * 1024 * 1024);
+				$(".init").click(function(){
+					db.transaction(function(tx){
+						tx.executeSql("CREATE TABLE IF NOT EXISTS items2 (id integer primary key, value text)");
+					});
+				})
+				$(".add").click(function(){
+					var newVal = $("input").val();
+					db.transaction(function(tx){
+						tx.executeSql("INSERT INTO items2 (value) VALUES (?)", [newVal], function(){
+							console.log("record inserted")
+						}, function(tx, error){
+							console.log("record insert failed");
+							console.log(error);
+						});
+					});
+				})
+				$(".get").click(function(){
+					db.transaction(function(tx){
+						tx.executeSql("select * from items2", [], function(tx, res){
+							console.log(res);
+							console.log(res.rows);
+							$.each(res.rows, function(idx, row){
+								console.log(res.rows.item(idx));
+							})
+						}, function(tx, error){
+							console.log("query failed");
+							console.log(error);
+						});
+					});
+				})
+			})
+		</script>
+		<style>
+			.btn {
+				cursor: pointer;
+				color: blue;
+				text-decoration: undescore;
+				margin-left: 10px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="content">
+			<input type="text" class="value"/>
+			<div class="commands">
+				<span class="btn init">init</span>
+				<span class="btn add">add</span>
+				<span class="btn get">get</span>
+			</div>
+		</div>
+	</body>
+</html>
