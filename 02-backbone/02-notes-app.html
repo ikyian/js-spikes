@@ -39,6 +39,13 @@
             	var NotesListView = Backbone.View.extend({
             		className : "notes-list",
             		template : _.template(_.unescape($('#notes-list').html())),
+            		events : {
+            			"click .add" : "onAdd"
+            		},
+            		onAdd : function(){
+        				Backbone.Mediator.publish("note:show", null);
+        				_l("add new note");
+            		},
             		render : function(){
             			var content = this.template({});
             			this.$el.html(content);
@@ -48,11 +55,6 @@
             				});
             				this.$(".list").append(view.render().el);
             			}, this);
-            			var _this = this;
-            			this.$(".commands .add").on("click", function(){
-            				Backbone.Mediator.publish("note:show", null);
-            				_l("add new note");
-            			});
             			return this;
             		}
             	});
@@ -60,22 +62,25 @@
             	var NotesListNoteView = Backbone.View .extend({
             		className : "notes-list-note",
             		template : _.template(_.unescape($('#list-note').html())),
+            		events : {
+            			"click .remove" : "onRemove",
+            			"click .edit" : "onEdit"
+            		},
+            		onRemove : function(){
+        				_l("remove " + this.model.get("title"));
+        				this.model.destroy();
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		onEdit : function(){
+        				Backbone.Mediator.publish("note:show", this.model.get("title"));
+        				_l("edit ");
+            		},
             		render : function(){
             			var content = this.template({
             				title : this.model.get("title"),
             				content : this.model.get("content")
             			});
             			this.$el.html(content);
-            			var _this = this;
-            			this.$(".remove").on("click", function(){
-            				_l("remove " + _this.model.get("title"));
-            				_this.model.destroy();
-            				Backbone.Mediator.publish("notes:show");
-            			});
-            			this.$(".edit").on("click", function(){
-            				Backbone.Mediator.publish("note:show", _this.model.get("title"));
-            				_l("edit ");
-            			});
             			return this;
             		}
             	});
@@ -83,26 +88,29 @@
             	var NoteView = Backbone.View .extend({
             		className : "note",
             		template : _.template(_.unescape($('#note').html())),
+            		events : {
+            			"click .cancel" : "onCancel",
+            			"click .save" : "onSave"
+            		},
+            		onCancel : function(){
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		onSave : function(){
+        				var newTitle = this.$("input").val();
+        				var newContent = this.$("textarea").val();
+        				this.model.set({
+        					"title" : newTitle,
+        					"content" : newContent	
+        				});
+        				this.model.save();
+        				Backbone.Mediator.publish("notes:show");
+            		},
             		render : function(){
             			var content = this.template({
             				title : this.model.escape("title"),
             				content : this.model.escape("content")
             			});
             			this.$el.html(content);
-            			this.$(".cancel").on("click", function(){
-            				Backbone.Mediator.publish("notes:show");
-            			});
-            			var _this = this;
-            			this.$(".save").on("click", function(){
-            				var newTitle = _this.$("input").val();
-            				var newContent = _this.$("textarea").val();
-            				_this.model.set({
-            					"title" : newTitle,
-            					"content" : newContent	
-            				});
-            				_this.model.save();
-            				Backbone.Mediator.publish("notes:show");
-            			});
             			return this;
             		}
             	});
