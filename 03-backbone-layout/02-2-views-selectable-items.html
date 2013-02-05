@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>02-2-views-selectable items</title>
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width initial-scale=1.0" />
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script src="lib/underscore.deferred-0-4-0.js"></script>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/backbone-0-9-10.js"></script>
+        <script src="lib/backbone.localStorage.js"></script>
+        <script src="lib/backbone-mediator.js"></script>
+        <script src="lib/backbone.layoutmanager-0-8-2.js"></script>
+        <script>
+        </script>
+        <script>
+        	$.Deferred = _.Deferred; // required by layoutmanager
+        	$.when = _.when;  // required by layoutmanager
+			$.contains = _.contains;  // required by layoutmanager
+
+            $(function(){
+            	
+            	var _l = function(msg){
+            		console.log(msg);
+            	}
+            	
+				// ---- models ----
+        	
+        	   var Note = Backbone.Model.extend({
+            		defaults : {
+            			title : "new note",
+            			content : ""
+            		}
+            	});
+            	
+            	var Notes = Backbone.Collection.extend({
+            		model : Note,
+            		localStorage : new Backbone.LocalStorage("Notes")
+            	});
+            	
+            	var notes = new Notes();
+				// ---- views ----
+				
+				var NotesListView = Backbone.Layout.extend({
+            		className : "notes-list",
+            		template : '#notes-list',
+            		keep : true,
+            		events : {
+            			"click .add" : "onAdd"
+            		},
+            		onAdd : function(){
+        				Backbone.Mediator.publish("note:show", null);
+        				_l("add new note");
+            		},
+            		beforeRender: function() {
+            			this.getViews(".notes-list-note").each(function(noteView){
+            				if(noteView){
+            					noteView.remove();	
+            				}
+            			});
+            			this.options.collection.each(function(note){
+            				this.insertView(".list", new NotesListNoteView({
+            					model : note
+            				}));
+            			}, this);
+            		},
+            		serialize : function(){
+            			return {
+            				collection : this.options.collection
+            			};
+            		}
+            	});
+            	
+            	var NotesListNoteView = Backbone.View .extend({
+            		className : "notes-list-note",
+            		manage : true,
+            		template : '#list-note',
+            		events : {
+            			"click .remove" : "onRemove",
+            			"click" : "onShow"
+            		},
+            		onRemove : function(){
+        				_l("remove " + this.model.get("title"));
+        				this.model.destroy();
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		onShow : function(){
+        				Backbone.Mediator.publish("note:show", this.model.get("title"));
+        				_l("edit ");
+            		},
+            		serialize : function(){
+            			return {
+            				title : this.options.model.get("title")
+            			}
+            		}
+            	});
+            	
+            	var NoteView = Backbone.View .extend({
+            		manage : true,
+            		className : "note",
+            		template : '#note',
+            		events : {
+            			"click .save" : "onSave"
+            		},
+            		onSave : function(){
+        				var newTitle = this.$("input").val();
+        				var newContent = this.$("textarea").val();
+        				this.model.set({
+        					"title" : newTitle,
+        					"content" : newContent	
+        				});
+        				this.model.save();
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		serialize : function(){
+            			return {
+            				title : this.options.model.escape("title"),
+            				content : this.options.model.escape("content")
+            			}
+            		}
+            	});
+            	
+				// ---- layout ----
+            	var layout = new Backbone.Layout({
+            		template : "#main",
+            		keep : true, // keep inserted views after rendering
+            		el : "#content"  // attach it to page
+            	});
+            	layout.render();
+				
+				// ---- router ----
+				var Router = Backbone.Router.extend({
+            		routes : {
+            			"notes" : "showNotes",
+            			"note/:title" : "showNote"
+            		},
+        			"showNotes" : function(){
+        				_l("router:notes");
+        				Backbone.Mediator.publish("notes:show");
+        			},
+        			"showNote" : function(title){
+        				Backbone.Mediator.publish("note:show", title);
+        			}
+            	});
+            	var router = new Router();
+
+
+				var showNotesList = function(){
+					notes.fetch({
+						success : function(){
+							_l("showNotesList()");
+			            	var view = new NotesListView({
+			            		collection : notes
+			            	});
+			            	layout.setView(".left", view).render();
+						},
+						error : function(){
+							_l("fail fetch notes");
+						}
+					})
+				};
+				
+				var showNote = function(title){
+					if(title === null){
+						var note = new Note({});
+						notes.push(note);
+					}else{
+						var note = notes.find(function(note){
+							return note.get("title") === title;
+						});
+						if(!note){
+							_l("note is not found");
+							return;
+						}
+					}
+					var view = new NoteView({
+						model : note
+					});
+					layout.setView(".content", view).render();	
+					
+					router.navigate("note/" + title);
+				};       	
+            	Backbone.Mediator.subscribe("notes:show", showNotesList);
+            	Backbone.Mediator.subscribe("note:show", showNote);
+            	
+            	Backbone.history.start();
+            	router.navigate("notes", { trigger : true });
+
+				// ---- layout ----
+            });
+        </script>
+        <style>
+            #templates {
+                display : none;
+            }
+            .top {
+            	background-color: #eeeeee;
+            }
+            .left {
+            	float:left;
+            	width: 200px;
+            	background-color: #eeeedd;
+            }
+            .content {
+            	background-color: #eeddee;
+            }
+            .link, .btn {
+                margin-left: 10px;
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+            .link {
+            	font-weight: bold;
+            }
+            .right {
+            	float: right;
+            }
+            .note {
+            	float : left;
+            	padding-left: 10px;
+            }
+            .clear {
+            	clear: both;
+            }
+        </style>
+	</head>
+
+	<body>
+		<div id="content">
+		</div>
+        <!-- templates -->
+        <script type="layout" id="main">
+        	<div class="top"><h4>backbone.layoutmanager notes app</h4></div>
+        	<div class="left"></div>
+        	<div class="content"></div>
+        </script>
+
+    	<script type="template" id="notes-list">
+    		<div class="list">
+    		</div>
+    		<div class="commands">
+    			<span class="btn right add">new</span>
+    		</div>
+    		<div class="clear"></div>
+    	</script>
+    	
+    	<script type="template" id="list-note">
+    		<div class="item">
+    			<span class="link"><%= title %></span>
+    			<div class="btn right remove">remove</div>
+    		</div>
+    	</script>
+    	
+    	<script type="template" id="note">
+    		<div class="note">
+    			<div clas="label"><h4>Current Note:</h4></div>
+	    		<div class="label">Title:</div>
+	    		<input type="text" name="title" value="<%= title %>"/>
+	    		<div class="label">Content:</div>
+	    		<textarea name="content"><%= content %></textarea>
+	    		<div class="commands">
+	    			<span class="btn right save">save</span>
+	    		</div>
+    		</div>
+    	</script>
+	</body>
+</html>
