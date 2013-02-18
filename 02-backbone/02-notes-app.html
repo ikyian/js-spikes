@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>02-notes-app</title>
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width initial-scale=1.0" />
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/backbone-0-9-10.js"></script>
+        <script src="lib/backbone-mediator.js"></script>
+        <script src="lib/backbone.localStorage.js"></script>
+        <script>
+            $(function(){
+            	var _l = function(msg){
+            		console.log(msg);
+            	}
+            	var Note = Backbone.Model.extend({
+            		defaults : {
+            			title : "new note",
+            			content : ""
+            		}
+            	});
+            	
+            	var Notes = Backbone.Collection.extend({
+            		model : Note,
+            		localStorage : new Backbone.LocalStorage("Notes")
+            	});
+            	
+            	var NotesListView = Backbone.View.extend({
+            		className : "notes-list",
+            		template : _.template(_.unescape($('#notes-list').html())),
+            		events : {
+            			"click .add" : "onAdd"
+            		},
+            		onAdd : function(){
+        				Backbone.Mediator.publish("note:show", null);
+        				_l("add new note");
+            		},
+            		render : function(){
+            			var content = this.template({});
+            			this.$el.html(content);
+            			this.collection.each(function(note){
+            				var view = new NotesListNoteView({
+            					model : note
+            				});
+            				this.$(".list").append(view.render().el);
+            			}, this);
+            			return this;
+            		}
+            	});
+            	
+            	var NotesListNoteView = Backbone.View .extend({
+            		className : "notes-list-note",
+            		template : _.template(_.unescape($('#list-note').html())),
+            		events : {
+            			"click .remove" : "onRemove",
+            			"click .edit" : "onEdit"
+            		},
+            		onRemove : function(){
+        				_l("remove " + this.model.get("title"));
+        				this.model.destroy();
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		onEdit : function(){
+        				Backbone.Mediator.publish("note:show", this.model.get("title"));
+        				_l("edit ");
+            		},
+            		render : function(){
+            			var content = this.template({
+            				title : this.model.get("title"),
+            				content : this.model.get("content")
+            			});
+            			this.$el.html(content);
+            			return this;
+            		}
+            	});
+            	
+            	var NoteView = Backbone.View .extend({
+            		className : "note",
+            		template : _.template(_.unescape($('#note').html())),
+            		events : {
+            			"click .cancel" : "onCancel",
+            			"click .save" : "onSave"
+            		},
+            		onCancel : function(){
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		onSave : function(){
+        				var newTitle = this.$("input").val();
+        				var newContent = this.$("textarea").val();
+        				this.model.set({
+        					"title" : newTitle,
+        					"content" : newContent	
+        				});
+        				this.model.save();
+        				Backbone.Mediator.publish("notes:show");
+            		},
+            		render : function(){
+            			var content = this.template({
+            				title : this.model.escape("title"),
+            				content : this.model.escape("content")
+            			});
+            			this.$el.html(content);
+            			return this;
+            		}
+            	});
+            	
+            	var Router = Backbone.Router.extend({
+            		routes : {
+            			"notes" : "showNotes",
+            			"note/:title" : "showNote"
+            		},
+        			"showNotes" : function(){
+        				_l("router:notes");
+        				Backbone.Mediator.publish("notes:show");
+        			},
+        			"showNote" : function(title){
+        				Backbone.Mediator.publish("note:show", title);
+        			}
+            	});
+            	var router = new Router();
+
+            	var notes = new Notes();
+            	
+				var showNotesList = function(){
+					notes.fetch({
+						success : function(){
+			            	var view = new NotesListView({
+			            		collection : notes
+			            	});
+			            	$("#content").empty().append(view.render().el);
+						},
+						error : function(){
+							_l("fail fetch notes");
+						}
+					})
+				};
+				
+				var showNote = function(title){
+					if(title === null){
+						var note = new Note({});
+						notes.push(note);
+					}else{
+						var note = notes.find(function(note){
+							return note.get("title") === title;
+						});
+						if(!note){
+							_l("note is not found");
+							return;
+						}
+					}
+					var view = new NoteView({
+						model : note
+					});
+					$("#content").empty().append(view.render().el);
+					router.navigate("note/" + title);
+				};       	
+            	Backbone.Mediator.subscribe("notes:show", showNotesList);
+            	Backbone.Mediator.subscribe("note:show", showNote);
+            	
+            	Backbone.history.start();
+            	router.navigate("notes", { trigger : true });
+            });
+        </script>
+        <style>
+            #templates {
+                display : none;
+            }
+            .btn {
+                margin-left: 10px;
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+            .right {
+            	float : right;
+            }
+        </style>
+	</head>
+
+	<body>
+		<h4>Notes manager test</h4>
+		<div id="content">
+		</div>
+        <!-- templates -->
+        <div id="templates">
+        	<div id="notes-list">
+        		<div class="list">
+        		</div>
+        		<div class="commands">
+        			<span class="btn add">new</span>
+        		</div>
+        	</div>
+        	
+        	<div id="list-note">
+        		<div class="item">
+        			<span class="link"><%= title %></span>
+        			<div class="btn right remove">remove</div>
+        			<div class="btn right edit">edit</div>
+        		</div>
+        	</div>
+        	
+        	<div id="note">
+        		<div class="label">Title:</div>
+        		<input type="text" name="title" value="<%= title %>"/>
+        		<div class="label">Content:</div>
+        		<textarea name="content"><%= content %></textarea>
+        		<div class="commands">
+        			<span class="btn right save">save</span>
+        			<span class="btn right cancel">cancel</span>
+        		</div>
+        	</div>
+        </div>
+	</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>01-2-views-layout-test</title>
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width initial-scale=1.0" />
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script src="lib/underscore-1-4-4.js"></script>
+        <script src="lib/underscore.deferred-0-4-0.js"></script>
+        <script src="lib/zepto-1-0rc1.js"></script>
+        <script src="lib/backbone-0-9-10.js"></script>
+        <script src="lib/backbone-mediator.js"></script>
+        <script src="lib/backbone.layoutmanager-0-8-2.js"></script>
+        <script> // from jQuery
+        	/*var doc = document;
+        	var docElem = doc.documentElement;
+	        var rnative = /^[^{]+\{\s*\[native code/;*/
+	        /**
+			 * For feature detection
+			 * @param {Function} fn The function to test for native support
+			 */
+			/*function isNative( fn ) {
+				return rnative.test( fn + "" );
+			}*/
+	
+			// Purposefully does not implement inclusive descendent
+			// As in, an element does not contain itself
+			/*var contains = isNative(docElem.contains) || docElem.compareDocumentPosition ?
+				function( a, b ) {
+					var adown = a.nodeType === 9 ? a.documentElement : a,
+						bup = b && b.parentNode;
+					return a === bup || !!( bup && bup.nodeType === 1 && (
+						adown.contains ?
+							adown.contains( bup ) :
+							a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16
+					));
+				} :
+				function( a, b ) {
+					if ( b ) {
+						while ( (b = b.parentNode) ) {
+							if ( b === a ) {
+								return true;
+							}
+						}
+					}
+					return false;
+				};
+			$.contains = contains;*/
+			$.contains = _.contains;
+			
+        </script>
+        <script>
+        	$.Deferred = _.Deferred; // required by layoutmanager
+        	$.when = _.when;
+            $(function(){
+            	
+            	var _l = function(msg){
+            		console.log(msg);
+            	}
+            	var View0 = Backbone.View.extend({
+            		template : "#view0",
+            		manage : true,
+            		// can be overriden, but is not used
+            		// render : function(template, context){
+            			// _l(template);
+            			// _l(context);
+            			// //this.$el.html(template(context));
+            			// return template(context);
+            			// //return this;
+            		// },
+            		serialize : function(){// place to provide data for template rendering
+            			return {
+            				value : "hello"
+            			}
+            		}
+            	});
+            	var View1 = Backbone.View.extend({
+            		template : "#view1",
+            		manage : true
+            	})
+            	var View2 = Backbone.View.extend({
+            		template : "#view2",
+            		manage : true
+            	})
+            	var layout = new Backbone.Layout({
+            		template : "#main",
+            		el : "#content",  // attach it to page
+            		views : {
+            			".top" : new View0(),
+            			".left" : new View1(),
+            			".content" : new View2()
+            		}
+            	});
+            	layout.render();
+            });
+        </script>
+        <style>
+            #templates {
+                display : none;
+            }
+            .top {
+            	background-color: #eeeeee;
+            }
+            .left {
+            	float:left;
+            	width: 200px;
+            	background-color: #eeeedd;
+            }
+            .content {
+            	background-color: #eeddee;
+            }
+            .btn {
+                margin-left: 10px;
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+            .right {
+            	float : right;
+            }
+        </style>
+	</head>
+
+	<body>
+		<div id="content">
+		</div>
+        <!-- templates -->
+        <script type="layout" id="main">
+        	<div class="top"></div>
+        	<div class="left"></div>
+        	<div class="content"></div>
+        </script>
+        <div id="templates">
+        	<script type="template" id="view0">
+        		<%= value %>
+        	</script>
+        	<div id="view1">
+        		view 1
+        		<div class="commands">
+        			<span class="btn view2">view2</span>
+        		</div>
+        	</div>
+        	<div id="view2">
+        		view 2
+        		<div class="commands">
+        			<span class="btn view1">view1</span>
+        		</div>
+        	</div>
+        </div>
+	</body>
+</html>
