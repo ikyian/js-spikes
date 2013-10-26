@@ -1,0 +1,37 @@
+<!doctype html >
+<html>
+<head>
+    <title>01 - inline requirejs test</title>
+    <script>
+       window.onConfigured = function(){
+
+            require([
+                'zepto',
+                'underscore',
+                'backbone',
+                'backbone.layoutmanager',
+                'underscore.deferred'
+            ],
+            function($, _, Backbone, LayoutManager){
+                $(function(){
+                    console.log('page document loaded');
+
+                    var TestView = Backbone.View.extend({
+                        className : 'test-view',
+                        template : 'hello.html',
+                        manage: true
+                    });
+
+                    var view = new TestView();
+                    view.$el.appendTo('body');
+                    view.render();
+                });
+           });
+      };
+    </script>
+    <script data-main="config.js" src="bower_components/requirejs/require.js"></script>
+</head>
+<body>
+    <div class="view"></div>
+</body>
+</html>
